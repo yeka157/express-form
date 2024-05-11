@@ -22,7 +22,6 @@ app.get('/customer', async (req, res) => {
             console.log(error);
             return res.status(500).send('Error fetching customer');
         }
-        console.log(data);
         return res.status(200).send(data);
     } catch (error) {
         console.log(error);
@@ -32,16 +31,37 @@ app.get('/customer', async (req, res) => {
 
 app.post('/customer', async (req, res) => {
     try {
-        console.log(req.body);
+        const { name, phone_number, email, address, birthdate, gender} = req.body;
+        if (!name || !phone_number || !email || !address || !birthdate || !gender) {
+            return res.status(500).send({status: 'failed', errorMsg : 'Incomplete data.'});
+        }
+        if (!/^[a-zA-Z ]+$/.test(name)) {
+            return res.status(500).send({status: 'failed', errorMsg: 'Invalid name'});
+        }
+        if (!/^\d+$/.test(phone_number)) {
+            return res.status(500).send({status: 'failed', errorMsg: 'Invalid phone number'});
+        }
+        if (!/\S+@\S+\.\S+/.test(email)) {
+            return res.status(500).send({status: 'failed', errorMsg: 'Invalid email'});
+        }
+        if (address.length < 5) {
+            return res.status(500).send({status: 'failed', errorMsg: 'Invalid address'});
+        }
+        let birthdayDate = new Date(birthdate);
+        let currentDate = new Date();
+        if (birthdayDate > currentDate) {
+            return res.status(500).send({status: 'failed', errorMsg: 'Invalid birthdate'});
+        }
+        if (gender < 1 || gender > 2) {
+            return res.status(500).send({status: 'failed', errorMsg: 'Invalid gender'});
+        }
         const { data, error } = await supabase.from('customer').insert(req.body);
         if (error) {
-            console.log(error);
-            return res.status(500).send({status: 'failed'});
+            return res.status(500).send({status: 'failed', errorMsg: error});
         }
         res.status(201).send({ status: 'success' });
     } catch (error) {
-        console.log(error);
-        res.status(500).send(error);
+        res.status(500).send({status: 'failed', errorMsg: error});
     }
 });
 
